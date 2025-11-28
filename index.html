@@ -180,8 +180,8 @@ restaurantSel.addEventListener("change", () => {
   additionalRow.classList.add("hidden");
   potMainSel.innerHTML = "";
 
-  // 若為鍋兵鍋物 → 顯示辣度
-  if (restaurantSel.value.includes("鍋兵鍋物")) {
+  // 若為一番鍋燒 → 顯示主食
+  if (restaurantSel.value.includes("一番鍋燒")) {
     showMainOptions();
   }
 });
@@ -190,7 +190,7 @@ menuItemSel.addEventListener("change", () => {
   const restaurant = restaurantSel.value;
   const additionalRow = el("additionalRow");
 
-  if (restaurant.includes("鍋兵鍋物")) {
+  if (restaurant.includes("一番鍋燒")) {
     showMainOptions();
   } else {
     additionalRow.classList.add("hidden");
@@ -200,13 +200,18 @@ menuItemSel.addEventListener("change", () => {
 function showMainOptions() {
   const additionalRow = el("additionalRow");
   const label = additionalRow.querySelector("label");
-  label.textContent = "辣度";
+  label.textContent = "主食";
   potMainSel.innerHTML = `
-    <option>不辣</option>
-    <option>微辣</option>
-    <option>小辣</option>
-    <option>中辣</option>
-    <option>大辣</option>
+    <option>白飯</option>
+    <option>蛋黃麵</option>
+    <option>冬粉</option>
+    <option>意麵</option>
+    <option>雞絲麵</option>
+    <option>蒸煮麵</option>
+    <option>烏龍</option>
+    <option>科學麵</option>
+    <option>麵疙瘩</option>
+    <option>拉麵</option>
   `;
   additionalRow.classList.remove("hidden");
 }
