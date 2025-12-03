@@ -164,10 +164,14 @@ function populateMenu(restaurant) {
     menuItemSel.appendChild(option);
   });
 
-  // 預設隱藏額外欄位
   const additionalRow = el("additionalRow");
   additionalRow.classList.add("hidden");
   potMainSel.innerHTML = "";
+
+  /* ★★★ 這是新增的 4 行：一番鍋燒 → 自動顯示主食 ★★★ */
+  if (restaurant.includes("一番鍋燒")) {
+    showMainOptions();
+  }
 }
 
 restaurantSel.addEventListener("change", () => {
@@ -180,7 +184,6 @@ restaurantSel.addEventListener("change", () => {
   additionalRow.classList.add("hidden");
   potMainSel.innerHTML = "";
 
-  // 若為一番鍋燒 → 顯示主食
   if (restaurantSel.value.includes("一番鍋燒")) {
     showMainOptions();
   }
