@@ -83,15 +83,13 @@ button.secondary{background:#ffb777;color:#000}
       </div>
 
     <div class="row hidden" id="additionalRow">
-      <label id="potMainLabel">套餐選項</label>
-      <select id="potMain"></select>
-    </div>
-
-    <div class="row hidden" id="friesRow">
-      <label>加購薯條</label>
-      <select id="addFries">
-        <option value="">不加購</option>
-        <option value="加購薯條-$30">加購薯條-$30</option>
+      <label id="potMainLabel">主食選擇</label>
+      <select id="potMain">
+        <option>正常飯</option>
+        <option>正常飯+滷汁</option>
+        <option>半飯</option>
+        <option>半飯+滷汁</option>
+        <option>不飯換菜</option>
       </select>
     </div>
 
@@ -165,70 +163,27 @@ let CURRENT_USER = null;
 let MENUS = {};
 let TEA_DATA = {};
 
-const potMainConfigs = {
-  "老江紅茶": [
-    {
-      categoryKey: "套餐組合",
-      options: ["紅茶冰-$81", "冷泡茶-$81", "小杯奶茶-$89", "中杯奶茶-$106"],
-      label: "套餐飲料"
-    }
-  ],
-  "老李小火鍋": [
-    {
-      categoryKey: "鍋物湯底", 
-      options: ["白飯", "意麵", "科學麵", "冬粉", "蒸煮麵", "王子麵"],
-      label: "主食選擇"
-    }
-  ]
-};
-
 const el = id => document.getElementById(id);
 const restaurantSel = el("restaurant");
 const menuItemSel = el("menuItem");
-const potMainSel = el("potMain");
-const teaRestaurantSel = el("teaRestaurant");
-const teaItemSel = el("teaItem");
+const additionalRow = el("additionalRow");
 
-function resetQty() {
+// 統一清除輸入欄位
+function resetLunchInputs() {
   el("qty").value = 1;
+  el("note").value = "";
+  el("spice").selectedIndex = 0;
+  el("potMain").selectedIndex = 0;
 }
 
-function handlePotMainVisibility() {
-  const restaurant = el("restaurant").value;
-  const additionalRow = el("additionalRow");
-  const friesRow = el("friesRow");
-  const labelEl = el("potMainLabel");
-  const potMainSel = el("potMain"); // 取得選項下拉選單
-  
-  let itemObj = {};
-  try { itemObj = JSON.parse(el("menuItem").value || "{}"); } catch(e) { itemObj = {}; }
-
-  const configs = potMainConfigs[Object.keys(potMainConfigs).find(k => restaurant.includes(k))];
-  
-  if (configs && itemObj.cat) {
-    const cleanCat = itemObj.cat.replace(/\s+/g, '');
-    const foundConfig = configs.find(c => cleanCat.includes(c.categoryKey.replace(/\s+/g, '')));
-
-    if (foundConfig) {
-      labelEl.textContent = foundConfig.label;
-      potMainSel.innerHTML = foundConfig.options.map(opt => `<option>${opt}</option>`).join('');
-      additionalRow.classList.remove("hidden");
-
-      if (restaurant.includes("老江紅茶") && cleanCat.includes("套餐組合")) {
-        friesRow.classList.remove("hidden");
-      } else {
-        friesRow.classList.add("hidden");
-        el("addFries").selectedIndex = 0;
-      }
-      return;
-    }
+// 根據餐廳判斷是否顯示額外欄位
+function updateCustomFields() {
+  const restaurant = restaurantSel.value;
+  if (restaurant.includes("灶蹄蹤堂")) {
+    additionalRow.classList.remove("hidden");
+  } else {
+    additionalRow.classList.add("hidden");
   }
-
-  // --- 重點修正區：當不符合套餐條件時，務必清空內容與隱藏 ---
-  additionalRow.classList.add("hidden");
-  friesRow.classList.add("hidden");
-  el("addFries").selectedIndex = 0;
-  potMainSel.innerHTML = ""; // 徹底清空 HTML 內容，避免殘留舊資料
 }
 
 async function loadMenus() {
@@ -273,35 +228,36 @@ function populateMenu(restaurant) {
     option.textContent = `${it.name} — ${it.price}元`;
     menuItemSel.appendChild(option);
   });
-
-  handlePotMainVisibility(); 
 }
 
+// 當變更餐廳時：重置所有欄位、切換顯示狀態、更新選單
 restaurantSel.addEventListener("change", () => {
   const selectedVal = restaurantSel.value;
   if (selectedVal.includes("漢堡王")) {
     window.open("https://forms.gle/zrCN8DFXG1zqW3TC8", "_blank");
     if (restaurantSel.options.length > 0) {
-      restaurantSel.selectedIndex = 0;
-      populateMenu(restaurantSel.value);
+        restaurantSel.selectedIndex = 0;
+        populateMenu(restaurantSel.value);
     }
     return;
   }
-  resetQty();
+  
+  resetLunchInputs(); // 重置欄位
+  updateCustomFields(); // 切換主食欄位顯示
   populateMenu(selectedVal);
-  el("note").value = "";
-  el("spice").selectedIndex = 0;
 });
 
+// 當變更餐點時：重置數量與備註
 menuItemSel.addEventListener("change", () => {
-  resetQty();
-  handlePotMainVisibility();
+  resetLunchInputs();
 });
 
+// (其餘邏輯維持不變)
 async function loadTeaMenus() {
   try {
     const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getTeaMenus`);
     TEA_DATA = await res.json();
+    const teaRestaurantSel = el("teaRestaurant");
     teaRestaurantSel.innerHTML = "";
     Object.keys(TEA_DATA).forEach(r => {
       const opt = document.createElement("option");
@@ -317,6 +273,7 @@ async function loadTeaMenus() {
 }
 
 function populateTeaMenu(restaurant) {
+  const teaItemSel = el("teaItem");
   teaItemSel.innerHTML = "";
   const items = TEA_DATA[restaurant] || [];
   let lastCat = null;
@@ -336,8 +293,8 @@ function populateTeaMenu(restaurant) {
   });
 }
 
-teaRestaurantSel.addEventListener("change", () => {
-  populateTeaMenu(teaRestaurantSel.value);
+el("teaRestaurant").addEventListener("change", () => {
+  populateTeaMenu(el("teaRestaurant").value);
 });
 
 el("btnLogin").addEventListener("click", async () => {
@@ -363,13 +320,6 @@ el("addLunch").addEventListener("click", async () => {
   const itemObj = JSON.parse(menuItemSel.value || "{}");
   if (!itemObj.name) return alert("請選擇餐點");
 
-  // 組合備註
-  let finalNote = el("note").value;
-  const friesVal = el("addFries").value;
-  if (friesVal && !el("friesRow").classList.contains("hidden")) {
-    finalNote = finalNote ? `${finalNote} / ${friesVal}` : friesVal;
-  }
-
   const params = new URLSearchParams();
   params.append("date", date);
   params.append("employee", CURRENT_USER.name);
@@ -379,8 +329,8 @@ el("addLunch").addEventListener("click", async () => {
   params.append("price", itemObj.price ?? "");
   params.append("spice", el("spice").value);
   params.append("qty", el("qty").value);
-  params.append("note", finalNote);
-  params.append("potMain", el("potMain").value || "");
+  params.append("note", el("note").value);
+  params.append("potMain", restaurant.includes("灶蹄蹤堂") ? el("potMain").value : "");
 
   try {
     await fetch(GOOGLE_WEBAPP_URL, {
@@ -390,6 +340,7 @@ el("addLunch").addEventListener("click", async () => {
     });
     alert("訂單已新增");
     renderOrders();
+    resetLunchInputs(); // 送出後重置
   } catch (e) { alert("新增失敗"); }
 });
 
@@ -406,7 +357,7 @@ async function renderOrders() {
       div.innerHTML = `
         <strong>#${idx + 1} ${o.restaurant} - ${o.item}</strong>
         <div class="small">數量: ${o.qty}｜價格: ${o.price}｜調味: ${o.spice || ""}</div>
-        <div class="small">備註: ${o.note || ""}${o.potMain ? "｜選項: " + o.potMain : ""}</div>
+        <div class="small">備註: ${o.note || ""}${o.potMain ? "｜主食: " + o.potMain : ""}</div>
         <button class="delete-btn" data-id="${o.id}">刪除</button>
       `;
       ordersList.appendChild(div);
