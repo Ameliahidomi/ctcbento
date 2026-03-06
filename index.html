@@ -6,7 +6,6 @@
 <title>倉庫訂餐網</title>
 
 <style>
-/* 完全保留您原始的樣式設定 */
 :root{--page-width:900px;--bg:#fff4ea}
 body{
   background:var(--bg);
@@ -87,13 +86,11 @@ button.secondary{background:#ffb777;color:#000}
       </div>
 
     <div class="row hidden" id="additionalRow">
-      <label>主食選擇</label>
+      <label>醬汁選擇</label>
       <select id="potMain">
-        <option>正常飯</option>
-        <option>正常飯+滷汁</option>
-        <option>半飯</option>
-        <option>半飯+滷汁</option>
-        <option>不飯換菜</option>
+        <option>辣</option>
+        <option>不辣</option>
+        <option>麻醬</option>
       </select>
     </div>
 
@@ -179,13 +176,13 @@ function resetLunchFields() {
   el("potMain").selectedIndex = 0;
 }
 
-// 處理灶蹄蹤堂欄位顯示
+// 處理某餐廳欄位顯示
 function handleRestaurantLogic() {
   const resName = el("restaurant").value;
   const additionalRow = el("additionalRow");
 
-  // 若選中灶蹄蹤堂才顯示主食
-  if (resName.includes("灶蹄蹤堂")) {
+  // 若選中某餐廳才顯示主食
+  if (resName.includes("冠成涼麵")) {
     additionalRow.classList.remove("hidden");
   } else {
     additionalRow.classList.add("hidden");
