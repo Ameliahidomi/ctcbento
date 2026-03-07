@@ -38,7 +38,7 @@ button.secondary{background:#ffb777;color:#000}
   padding:12px;border-radius:8px;background:#fff7f0
 }
 .hidden{display:none}
-.order-item{position:relative;padding-right:70px}
+.order-item{position:relative;padding-right:70px;border-bottom:1px solid #eee;padding-bottom:10px;margin-bottom:10px}
 .order-item .delete-btn{
   position:absolute;right:10px;top:50%;
   transform:translateY(-50%);
@@ -47,7 +47,6 @@ button.secondary{background:#ffb777;color:#000}
 }
 .small{font-size:13px;color:#555;margin-top:4px}
 .note{font-size:12px;color:#777}
-/* 新增：處理中狀態的小提示 */
 .loading-msg { font-size: 12px; color: #ff8a4b; font-weight: bold; }
 </style>
 </head>
@@ -86,12 +85,8 @@ button.secondary{background:#ffb777;color:#000}
       </div>
 
     <div class="row hidden" id="additionalRow">
-      <label>醬汁選擇</label>
-      <select id="potMain">
-        <option>辣</option>
-        <option>不辣</option>
-        <option>麻醬</option>
-      </select>
+      <label id="additionalLabel">自訂欄位</label>
+      <select id="potMain"></select>
     </div>
 
     <div class="row">
@@ -146,7 +141,7 @@ button.secondary{background:#ffb777;color:#000}
       </div>
 
       <div class="center">
-        <button id="addTea">新增下午茶訂單（送出到團主）</button>
+        <button id="addTea">新增下午茶訂單</button>
         <button id="backFromTea" class="secondary">回上一頁</button>
         <span id="teaLoading" class="loading-msg hidden">處理中...</span>
       </div>
@@ -162,34 +157,55 @@ button.secondary{background:#ffb777;color:#000}
 
 <script>
 const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyznRRA7TJ28X9TtMU_0r2qhXUemySqgICb6kI-Jd2YA0zzhJxEK6OQr1JOkyL7YtXK/exec";
+
+// ==========================================
+// 餐廳特殊欄位設定區 (在此處新增餐廳即可)
+// ==========================================
+const RESTAURANT_CONFIG = {
+  "冠成涼麵": {
+    label: "醬汁選擇",
+    options: ["辣", "不辣", "麻醬"]
+  }
+};
+// ==========================================
+
 let CURRENT_USER = null;
 let MENUS = {};
 let TEA_DATA = {};
 
 const el = id => document.getElementById(id);
 
-// 統一重置午餐欄位邏輯
+// 自動重置所有欄位，保持畫面乾淨
 function resetLunchFields() {
   el("qty").value = 1;
   el("note").value = "";
   el("spice").selectedIndex = 0;
-  el("potMain").selectedIndex = 0;
+  // 若有動態欄位也重置
+  if (el("potMain").options.length > 0) el("potMain").selectedIndex = 0;
 }
 
-// 處理某餐廳欄位顯示
+// 根據設定檔自動判斷是否顯示額外欄位
 function handleRestaurantLogic() {
   const resName = el("restaurant").value;
-  const additionalRow = el("additionalRow");
+  const row = el("additionalRow");
+  const label = el("additionalLabel");
+  const select = el("potMain");
 
-  // 若選中某餐廳才顯示主食
-  if (resName.includes("冠成涼麵")) {
-    additionalRow.classList.remove("hidden");
+  // 尋找是否有對應的設定 (只要餐廳名稱包含設定的字串即可)
+  const key = Object.keys(RESTAURANT_CONFIG).find(k => resName.includes(k));
+  
+  if (key) {
+    const config = RESTAURANT_CONFIG[key];
+    label.textContent = config.label;
+    select.innerHTML = config.options.map(opt => `<option>${opt}</option>`).join('');
+    row.classList.remove("hidden");
   } else {
-    additionalRow.classList.add("hidden");
+    row.classList.add("hidden");
+    select.innerHTML = "";
   }
 }
 
-// 控制按鈕讀取狀態
+// 按鈕讀取動畫控制
 function toggleLoading(type, isLoading) {
   const btn = type === 'lunch' ? el("addLunch") : el("addTea");
   const msg = type === 'lunch' ? el("lunchLoading") : el("teaLoading");
@@ -202,56 +218,54 @@ async function loadMenus() {
   try {
     const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getMenus`);
     MENUS = await res.json();
-    const restaurantSel = el("restaurant");
-    restaurantSel.innerHTML = "";
+    const sel = el("restaurant");
+    sel.innerHTML = "";
     Object.keys(MENUS).forEach(r => {
       const opt = document.createElement("option");
       opt.value = r; opt.textContent = r;
-      restaurantSel.appendChild(opt);
+      sel.appendChild(opt);
     });
-    if (restaurantSel.options.length > 0) {
-      restaurantSel.selectedIndex = 0;
-      populateMenu(restaurantSel.value);
+    if (sel.options.length > 0) {
+      sel.selectedIndex = 0;
+      populateMenu(sel.value);
     }
   } catch (e) { console.error("fetch menus failed", e); }
 }
 
 function populateMenu(restaurant) {
-  const menuItemSel = el("menuItem");
-  menuItemSel.innerHTML = "";
+  const sel = el("menuItem");
+  sel.innerHTML = "";
   const items = MENUS[restaurant] || [];
   let lastCat = null;
   items.forEach(it => {
     if (it.cat !== lastCat) {
       const catOpt = document.createElement("option");
       catOpt.disabled = true; catOpt.textContent = it.cat; catOpt.style.fontWeight = "600";
-      menuItemSel.appendChild(catOpt);
+      sel.appendChild(catOpt);
       lastCat = it.cat;
     }
-    const option = document.createElement("option");
-    option.value = JSON.stringify(it);
-    option.textContent = `${it.name} — ${it.price}元`;
-    menuItemSel.appendChild(option);
+    const opt = document.createElement("option");
+    opt.value = JSON.stringify(it);
+    opt.textContent = `${it.name} — ${it.price}元`;
+    sel.appendChild(opt);
   });
-  handleRestaurantLogic();
+  handleRestaurantLogic(); // 載入選單後檢查欄位
 }
 
 el("restaurant").addEventListener("change", () => {
   const val = el("restaurant").value;
-  // 保留漢堡王跳窗設定
+  // 漢堡王特殊處理
   if (val.includes("漢堡王")) {
     window.open("https://forms.gle/zrCN8DFXG1zqW3TC8", "_blank");
     el("restaurant").selectedIndex = 0;
     populateMenu(el("restaurant").value);
     return;
   }
-  resetLunchFields(); // 切換餐廳重置
+  resetLunchFields();
   populateMenu(val);
 });
 
-el("menuItem").addEventListener("change", () => {
-  resetLunchFields(); // 切換餐點重置
-});
+el("menuItem").addEventListener("change", resetLunchFields);
 
 el("btnLogin").addEventListener("click", async () => {
   const empId = el("empId").value.trim();
@@ -277,17 +291,21 @@ el("addLunch").addEventListener("click", async () => {
 
   toggleLoading('lunch', true);
 
+  const resName = el("restaurant").value;
+  const hasConfig = Object.keys(RESTAURANT_CONFIG).some(k => resName.includes(k));
+
   const params = new URLSearchParams();
   params.append("date", new Date().toISOString().slice(0, 10));
   params.append("employee", CURRENT_USER.name);
-  params.append("restaurant", el("restaurant").value);
+  params.append("restaurant", resName);
   params.append("category", itemObj.cat || "");
   params.append("item", itemObj.name);
   params.append("price", itemObj.price ?? "");
   params.append("spice", el("spice").value);
   params.append("qty", el("qty").value);
   params.append("note", el("note").value);
-  params.append("potMain", el("restaurant").value.includes("冠成涼麵") ? el("potMain").value : "");
+  // 只有在符合條件時才傳送 potMain
+  params.append("potMain", hasConfig ? el("potMain").value : "");
 
   try {
     await fetch(GOOGLE_WEBAPP_URL, {
@@ -307,23 +325,22 @@ async function renderOrders() {
   try {
     const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getOrders&employee=${encodeURIComponent(CURRENT_USER.name)}`);
     const data = await res.json();
-    const ordersList = el("ordersList");
-    ordersList.innerHTML = "";
+    const list = el("ordersList");
+    list.innerHTML = "";
     data.forEach((o, idx) => {
       const div = document.createElement("div");
       div.className = "order-item";
       div.innerHTML = `
         <strong>#${idx + 1} ${o.restaurant} - ${o.item}</strong>
         <div class="small">數量: ${o.qty}｜價格: ${o.price}｜調味: ${o.spice || ""}</div>
-        <div class="small">備註: ${o.note || ""}${o.potMain ? "｜主食: " + o.potMain : ""}</div>
+        <div class="small">備註: ${o.note || ""}${o.potMain ? "｜選項: " + o.potMain : ""}</div>
         <button class="delete-btn" data-id="${o.id}">刪除</button>
       `;
-      ordersList.appendChild(div);
+      list.appendChild(div);
     });
     document.querySelectorAll(".delete-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
-        btn.disabled = true;
-        btn.innerText = "...";
+        btn.disabled = true; btn.innerText = "...";
         const params = new URLSearchParams();
         params.append("action", "delete");
         params.append("id", btn.dataset.id);
