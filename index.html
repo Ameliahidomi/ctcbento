@@ -85,7 +85,7 @@ button.secondary{background:#ffb777;color:#000}
       </div>
 
     <div class="row hidden" id="additionalRow">
-      <label id="additionalLabel">自訂欄位</label>
+      <label id="additionalLabel">主食</label>
       <select id="potMain"></select>
     </div>
 
@@ -123,23 +123,19 @@ button.secondary{background:#ffb777;color:#000}
       <label for="teaRestaurant">餐廳名稱</label>
       <select id="teaRestaurant"></select>
     </div>
-
     <div class="menu-area">
       <div class="row">
         <label>品項</label>
         <select id="teaItem"></select>
       </div>
-
       <div class="row">
         <label>數量</label>
         <input id="teaQty" type="number" min="1" value="1" style="width:70px" />
       </div>
-
       <div class="row">
         <label>備註</label>
         <input id="teaNote" placeholder="例: 醬少、加辣...." />
       </div>
-
       <div class="center">
         <button id="addTea">新增下午茶訂單</button>
         <button id="backFromTea" class="secondary">回上一頁</button>
@@ -159,12 +155,16 @@ button.secondary{background:#ffb777;color:#000}
 const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyznRRA7TJ28X9TtMU_0r2qhXUemySqgICb6kI-Jd2YA0zzhJxEK6OQr1JOkyL7YtXK/exec";
 
 // ==========================================
-// 餐廳特殊欄位設定區 (在此處新增餐廳即可)
+// 餐廳特殊條件設定區
 // ==========================================
 const RESTAURANT_CONFIG = {
-  "冠成涼麵": {
-    label: "醬汁選擇",
-    options: ["辣", "不辣", "麻醬"]
+  "39 Pizza": {
+    triggerCat: "焗烤",
+    options: ["飯", "麵"]
+  },
+  "江鳥紅": {
+    triggerCat: "鍋燒",
+    options: ["飯", "冬粉"]
   }
 };
 // ==========================================
@@ -175,37 +175,45 @@ let TEA_DATA = {};
 
 const el = id => document.getElementById(id);
 
-// 自動重置所有欄位，保持畫面乾淨
 function resetLunchFields() {
   el("qty").value = 1;
   el("note").value = "";
   el("spice").selectedIndex = 0;
-  // 若有動態欄位也重置
   if (el("potMain").options.length > 0) el("potMain").selectedIndex = 0;
 }
 
-// 根據設定檔自動判斷是否顯示額外欄位
+// 核心邏輯：根據餐廳與類別判斷是否顯示主食
 function handleRestaurantLogic() {
   const resName = el("restaurant").value;
+  const itemVal = el("menuItem").value;
   const row = el("additionalRow");
-  const label = el("additionalLabel");
   const select = el("potMain");
-
-  // 尋找是否有對應的設定 (只要餐廳名稱包含設定的字串即可)
-  const key = Object.keys(RESTAURANT_CONFIG).find(k => resName.includes(k));
   
-  if (key) {
-    const config = RESTAURANT_CONFIG[key];
-    label.textContent = config.label;
-    select.innerHTML = config.options.map(opt => `<option>${opt}</option>`).join('');
-    row.classList.remove("hidden");
-  } else {
+  if (!itemVal || itemVal.startsWith('--')) {
     row.classList.add("hidden");
-    select.innerHTML = "";
+    return;
+  }
+
+  try {
+    const itemObj = JSON.parse(itemVal);
+    const category = (itemObj.cat || "").replace(/\s+/g, ""); // 去除空白
+
+    // 尋找符合目前餐廳名稱的設定鍵值
+    const configKey = Object.keys(RESTAURANT_CONFIG).find(key => resName.includes(key));
+    const config = RESTAURANT_CONFIG[configKey];
+
+    // 如果餐廳有設定，且類別包含觸發關鍵字
+    if (config && category.includes(config.triggerCat)) {
+      select.innerHTML = config.options.map(opt => `<option>${opt}</option>`).join('');
+      row.classList.remove("hidden");
+    } else {
+      row.classList.add("hidden");
+    }
+  } catch (e) {
+    row.classList.add("hidden");
   }
 }
 
-// 按鈕讀取動畫控制
 function toggleLoading(type, isLoading) {
   const btn = type === 'lunch' ? el("addLunch") : el("addTea");
   const msg = type === 'lunch' ? el("lunchLoading") : el("teaLoading");
@@ -225,11 +233,8 @@ async function loadMenus() {
       opt.value = r; opt.textContent = r;
       sel.appendChild(opt);
     });
-    if (sel.options.length > 0) {
-      sel.selectedIndex = 0;
-      populateMenu(sel.value);
-    }
-  } catch (e) { console.error("fetch menus failed", e); }
+    if (sel.options.length > 0) populateMenu(sel.value);
+  } catch (e) { console.error(e); }
 }
 
 function populateMenu(restaurant) {
@@ -240,7 +245,8 @@ function populateMenu(restaurant) {
   items.forEach(it => {
     if (it.cat !== lastCat) {
       const catOpt = document.createElement("option");
-      catOpt.disabled = true; catOpt.textContent = it.cat; catOpt.style.fontWeight = "600";
+      catOpt.disabled = true; 
+      catOpt.textContent = `-${it.cat}-`;
       sel.appendChild(catOpt);
       lastCat = it.cat;
     }
@@ -249,12 +255,11 @@ function populateMenu(restaurant) {
     opt.textContent = `${it.name} — ${it.price}元`;
     sel.appendChild(opt);
   });
-  handleRestaurantLogic(); // 載入選單後檢查欄位
+  handleRestaurantLogic();
 }
 
 el("restaurant").addEventListener("change", () => {
   const val = el("restaurant").value;
-  // 漢堡王特殊處理
   if (val.includes("漢堡王")) {
     window.open("https://forms.gle/zrCN8DFXG1zqW3TC8", "_blank");
     el("restaurant").selectedIndex = 0;
@@ -265,7 +270,9 @@ el("restaurant").addEventListener("change", () => {
   populateMenu(val);
 });
 
-el("menuItem").addEventListener("change", resetLunchFields);
+el("menuItem").addEventListener("change", () => {
+  handleRestaurantLogic(); 
+});
 
 el("btnLogin").addEventListener("click", async () => {
   const empId = el("empId").value.trim();
@@ -286,13 +293,19 @@ el("btnLogin").addEventListener("click", async () => {
 });
 
 el("addLunch").addEventListener("click", async () => {
-  const itemObj = JSON.parse(el("menuItem").value || "{}");
-  if (!itemObj.name) return alert("請選擇餐點");
-
+  const itemVal = el("menuItem").value;
+  if (!itemVal) return alert("請選擇餐點");
+  
+  const itemObj = JSON.parse(itemVal);
   toggleLoading('lunch', true);
 
   const resName = el("restaurant").value;
-  const hasConfig = Object.keys(RESTAURANT_CONFIG).some(k => resName.includes(k));
+  const category = (itemObj.cat || "").replace(/\s+/g, "");
+  
+  // 檢查是否需要傳送額外的主食欄位
+  const configKey = Object.keys(RESTAURANT_CONFIG).find(key => resName.includes(key));
+  const config = RESTAURANT_CONFIG[configKey];
+  const isSpecial = config && category.includes(config.triggerCat);
 
   const params = new URLSearchParams();
   params.append("date", new Date().toISOString().slice(0, 10));
@@ -304,8 +317,7 @@ el("addLunch").addEventListener("click", async () => {
   params.append("spice", el("spice").value);
   params.append("qty", el("qty").value);
   params.append("note", el("note").value);
-  // 只有在符合條件時才傳送 potMain
-  params.append("potMain", hasConfig ? el("potMain").value : "");
+  params.append("potMain", isSpecial ? el("potMain").value : "");
 
   try {
     await fetch(GOOGLE_WEBAPP_URL, {
@@ -316,6 +328,7 @@ el("addLunch").addEventListener("click", async () => {
     alert("訂單已新增");
     renderOrders();
     resetLunchFields();
+    handleRestaurantLogic();
   } catch (e) { alert("新增失敗"); }
   finally { toggleLoading('lunch', false); }
 });
@@ -333,7 +346,7 @@ async function renderOrders() {
       div.innerHTML = `
         <strong>#${idx + 1} ${o.restaurant} - ${o.item}</strong>
         <div class="small">數量: ${o.qty}｜價格: ${o.price}｜調味: ${o.spice || ""}</div>
-        <div class="small">備註: ${o.note || ""}${o.potMain ? "｜選項: " + o.potMain : ""}</div>
+        <div class="small">備註: ${o.note || ""}${o.potMain ? "｜主食: " + o.potMain : ""}</div>
         <button class="delete-btn" data-id="${o.id}">刪除</button>
       `;
       list.appendChild(div);
