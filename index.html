@@ -43,71 +43,64 @@ button.secondary{background:#ffb777;color:#000}
 .small{font-size:13px;color:#555;margin-top:4px}
 .note{font-size:12px;color:#777;margin-top:8px}
 
-/* --- 彈窗樣式修正 --- */
+/* --- 公告視窗樣式修正 --- */
 .modal-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000;
 }
 .modal-content { 
   background: white; 
-  padding: 30px 40px; 
-  border-radius: 16px; /* 調回原始大小的弧度 */
-  width: 540px; 
+  padding: 40px; 
+  border-radius: 24px; 
+  width: 580px; 
   max-width: 90%; 
   box-shadow: 0 12px 40px rgba(0,0,0,0.15); 
   position: relative;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible; /* 允許圖片稍微超出邊界 */
 }
 .modal-header {
   text-align: center;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: bold;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  position: relative;
-  z-index: 10; /* 確保在圖片上方 */
+  gap: 12px;
 }
 .modal-body { 
   text-align: left; 
   line-height: 1.8; 
   font-size: 16px;
   color: #333;
+  margin-bottom: 25px;
   position: relative;
-  z-index: 10; /* 確保文字在最前方 */
-  margin-bottom: 20px;
+  z-index: 10;
 }
 .modal-body div { margin-bottom: 8px; }
 
-/* 圖片設置：不淡化，且置於文字後方 */
 .notice-bg-img {
   position: absolute;
-  right: 15px;
-  bottom: 25px;
-  width: 170px; 
-  opacity: 1; /* 不淡化，保持原始色彩 */
-  z-index: 1; /* 位於文字背景層 */
+  right: 10px;
+  bottom: 10px;
+  width: 180px; 
+  z-index: 5;
   pointer-events: none;
 }
 
-/* 按鈕位置：視窗底部正中央 */
 .modal-footer {
   display: flex;
   justify-content: center;
-  position: relative;
-  z-index: 10;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 #closeNotice {
-  padding: 7px 20px;
+  padding: 10px 30px;
   font-size: 16px;
   font-weight: bold;
-  background: #ff88a4b;
-  border-radius: 8px;
+  background: #ff8a4b;
+  border-radius: 10px;
 }
 
 button:hover {
@@ -141,59 +134,75 @@ button:hover {
 
 <div class="container">
   <h1>倉庫訂餐網</h1>
+  
   <div id="page-login" class="hidden">
-    <div class="row"><label>員工工號</label><input id="empId" type="text" placeholder="輸入工號" /></div>
+    <div class="row"><label>🆔 員工工號</label><input id="empId" type="text" placeholder="輸入工號" /></div>
     <div class="center"><button id="btnLogin">登入</button></div>
   </div>
+
   <div id="page-home" class="hidden">
-    <p id="welcome"></p>
-    <div class="center"><button id="toLunch">🍱午餐</button><button id="toTea" class="secondary">☕下午茶</button></div>
+    <p id="welcome" style="font-weight:bold; font-size:18px"></p>
+    <div class="center"><button id="toLunch">🍱 午餐</button><button id="toTea" class="secondary">☕ 下午茶</button></div>
   </div>
+
   <div id="page-lunch" class="hidden">
-    <div class="row"><label>🏪餐廳名稱</label><select id="restaurant"></select></div>
+    <div class="row"><label>🏪 餐廳名稱</label><select id="restaurant"></select></div>
+    
     <div class="menu-area">
-      <div class="row"><label>🍲餐點選擇</label><select id="menuItem"></select></div>
-      <div id="additionalRow" class="row hidden"><label id="additionalLabel">備選</label><select id="potMain"></select></div>
-      <div id="friesRow" class="row hidden"><label>🍟加購薯條</label><select id="addFries"><option value="">不加購</option><option value="加購薯條-$30">加購薯條-$30</option></select></div>
-      <div class="row"><label>🧂調味</label><select id="spice"><option>不加</option><option>微辣</option><option>小辣</option><option>中辣</option><option>加醋</option></select></div>
-      <div class="row"><label>🔢數量</label><input id="qty" type="number" min="1" value="1" style="width:70px"></div>
-      <div class="row"><label>📝備註</label><input id="note" placeholder="例: 少醬、不要蔥"></div>
-      <div class="center"><button id="addLunch">➕新增訂單</button><button id="backFromLunch" class="secondary">⬅️回上一頁</button></div>
+      <div class="row"><label>🍲 餐點選擇</label><select id="menuItem"></select></div>
+      
+      <div id="additionalRow" class="row hidden">
+        <label id="additionalLabel">⚙️ 選項</label>
+        <div id="potMainContainer"></div>
+      </div>
+
+      <div id="friesRow" class="row hidden"><label>🍟 加購薯條</label><select id="addFries"><option value="">不加購</option><option value="加購薯條-$30">加購薯條-$30</option></select></div>
+      
+      <div class="row"><label>🧂 調味</label><select id="spice"><option>不加</option><option>微辣</option><option>小辣</option><option>中辣</option><option>加醋</option></select></div>
+      <div class="row"><label>🔢 數量</label><input id="qty" type="number" min="1" value="1" style="width:80px"></div>
+      <div class="row"><label>📝 備註</label><input id="note" placeholder="例: 少醬、不要蔥"></div>
+      
+      <div class="center">
+        <button id="addLunch">➕ 新增訂單</button>
+        <button id="backFromLunch" class="secondary">⬅️ 回上一頁</button>
+      </div>
     </div>
   </div>
+
   <div class="orders">
-    <h3>📋我的訂單（即時顯示）</h3>
+    <h3 style="margin-top:30px">📋 我的訂單（即時顯示）</h3>
     <div id="ordersList"></div>
-    <p class="note">僅顯示你本人的訂單，可隨時刪除。</p>
+    <p style="font-size:13px; color:#666; margin-top:10px">僅顯示你本人的訂單，可隨時刪除。</p>
   </div>
 </div>
 
 <script>
-// 此處保留您原本的 JS 邏輯
 const GOOGLE_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyznRRA7TJ28X9TtMU_0r2qhXUemySqgICb6kI-Jd2YA0zzhJxEK6OQr1JOkyL7YtXK/exec";
+
 const potMainConfigs = {
-  "老江紅茶": { categoryKey: "套餐組合", options: ["紅茶冰-$81", "冷泡茶-$81", "小杯奶茶-$89", "中杯奶茶-$106"], label: "🥤套餐飲料", hasFries: true },
-  "老李小火鍋": { categoryKey: "鍋物湯底", options: ["白飯", "意麵", "科學麵", "冬粉", "蒸煮麵", "王子麵"], label: "🍜主食選擇" },
-  "北平京廚北方麵食館": { categoryKey: "麵食類", options: ["刀削麵", "細麵"], label: "🍜麵體選擇" },
-  "古早魏爌肉飯": { categoryKey: "麵食類", options: ["細麵", "扁麵"], label: "🍜主食選擇" }
+  "老江紅茶": { categoryKey: "套餐組合", options: ["紅茶冰-$81", "冷泡茶-$81", "小杯奶茶-$89", "中杯奶茶-$106"], label: "🥤 套餐飲料", hasFries: true },
+  "老李小火鍋": { categoryKey: "鍋物湯底", options: ["白飯", "意麵", "科學麵", "冬粉", "蒸煮麵", "王子麵"], label: "🍜 主食選擇" },
+  "北平京廚北方麵食館": { categoryKey: "麵食類", options: ["刀削麵", "細麵"], label: "🍜 麵體選擇" },
+  "小琉球菜尾": { itemKey: "蛋炒飯", options: ["不要蒜", "不要蔥", "不要洋蔥", "不要胡椒"], label: "🚫 客製需求", isMulti: true }
 };
+
 let CURRENT_USER = null; let MENUS = {};
 const el = id => document.getElementById(id);
-el("closeNotice").addEventListener("click", () => { el("noticeModal").style.display = "none"; el("page-login").classList.remove("hidden"); });
-el("btnLogin").addEventListener("click", async () => {
-  const empId = el("empId").value.trim();
-  if (!empId) return alert("請輸入工號");
+
+el("closeNotice").onclick = () => { el("noticeModal").style.display = "none"; el("page-login").classList.remove("hidden"); };
+
+el("btnLogin").onclick = async () => {
+  const empId = el("empId").value.trim(); if (!empId) return;
   el("btnLogin").disabled = true;
   try {
     const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getEmployees`);
-    const employees = await res.json();
-    const found = employees.find(e => String(e.id) === empId);
-    if (found) {
-      CURRENT_USER = found; el("page-login").classList.add("hidden"); el("page-home").classList.remove("hidden");
-      el("welcome").textContent = `歡迎 ${found.name}`; loadMenus(); renderOrders();
-    } else { alert("工號不存在"); el("btnLogin").disabled = false; }
-  } catch (e) { alert("登入失敗"); el("btnLogin").disabled = false; }
-});
+    const data = await res.json();
+    const found = data.find(e => String(e.id) === empId);
+    if (found) { CURRENT_USER = found; el("page-login").classList.add("hidden"); el("page-home").classList.remove("hidden"); el("welcome").textContent = `歡迎 ${found.name}`; loadMenus(); renderOrders(); }
+    else { alert("工號錯誤"); el("btnLogin").disabled = false; }
+  } catch (e) { alert("系統錯誤"); el("btnLogin").disabled = false; }
+};
+
 async function loadMenus() {
   const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getMenus`);
   MENUS = await res.json();
@@ -201,75 +210,100 @@ async function loadMenus() {
   Object.keys(MENUS).forEach(r => { const opt = document.createElement("option"); opt.value = r; opt.textContent = r; sel.appendChild(opt); });
   if (sel.options.length > 0) populateMenu(sel.value);
 }
+
 function populateMenu(restaurant) {
   const sel = el("menuItem"); sel.innerHTML = "";
   const items = MENUS[restaurant] || [];
-  let lastCat = null;
   items.forEach(it => {
-    if (it.cat !== lastCat) {
-      const catOpt = document.createElement("option"); catOpt.disabled = true;
-      catOpt.textContent = `-${it.cat}-`; catOpt.style.fontWeight = "bold"; sel.appendChild(catOpt); lastCat = it.cat;
-    }
-    const option = document.createElement("option"); option.value = JSON.stringify(it);
-    option.textContent = `${it.name} — ${it.price}元`; sel.appendChild(option);
+    const opt = document.createElement("option"); opt.value = JSON.stringify(it);
+    opt.textContent = `${it.name} — ${it.price}元`; sel.appendChild(opt);
   });
+  el("qty").value = 1; el("note").value = "";
   handleDynamicUI();
 }
+
 function handleDynamicUI() {
-  const restaurant = el("restaurant").value; const itemVal = el("menuItem").value;
+  const restaurant = el("restaurant").value; 
+  const itemVal = el("menuItem").value;
+  const container = el("potMainContainer");
   if (!itemVal) return;
   const itemObj = JSON.parse(itemVal);
-  const configKey = Object.keys(potMainConfigs).find(k => restaurant.includes(k));
-  const config = potMainConfigs[configKey];
-  const cleanCat = (itemObj.cat || "").replace(/\s+/g, '');
-  if (config && cleanCat.includes(config.categoryKey)) {
+  const config = potMainConfigs[Object.keys(potMainConfigs).find(k => restaurant.includes(k))];
+  
+  const match = config && ((config.categoryKey && itemObj.cat.includes(config.categoryKey)) || (config.itemKey && itemObj.name.includes(config.itemKey)));
+
+  if (match) {
     el("additionalLabel").textContent = config.label;
-    el("potMain").innerHTML = config.options.map(o => `<option>${o}</option>`).join('');
+    if (config.isMulti) {
+      container.innerHTML = config.options.map(o => `<label style="margin-right:8px"><input type="checkbox" name="customOption" value="${o}"> ${o}</label>`).join('');
+    } else {
+      container.innerHTML = `<select id="potMain">${config.options.map(o => `<option value="${o}">${o}</option>`).join('')}</select>`;
+    }
     el("additionalRow").classList.remove("hidden");
-    if (config.hasFries) el("friesRow").classList.remove("hidden");
-  } else { el("additionalRow").classList.add("hidden"); el("friesRow").classList.add("hidden"); }
+    config.hasFries ? el("friesRow").classList.remove("hidden") : el("friesRow").classList.add("hidden");
+  } else { 
+    el("additionalRow").classList.add("hidden"); el("friesRow").classList.add("hidden");
+  }
 }
-async function renderOrders() {
-  if (!CURRENT_USER) return;
-  try {
-    const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getOrders&employee=${encodeURIComponent(CURRENT_USER.name)}`);
-    const data = await res.json();
-    const list = el("ordersList"); list.innerHTML = "";
-    data.forEach((o, idx) => {
-      const div = document.createElement("div"); div.className = "order-item";
-      div.innerHTML = `<strong>#${idx+1} ${o.restaurant} - ${o.item}</strong><div class="small">數量: ${o.qty}｜調味: ${o.spice || "無"}</div><div class="small">備註: ${o.note || ""} ${o.potMain ? "｜選項: "+o.potMain : ""}</div><button class="delete-btn" data-id="${o.id}">🗑️刪除</button>`;
-      list.appendChild(div);
-    });
-    document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        if (!confirm("確定要刪除這筆訂單嗎？")) return;
-        const params = new URLSearchParams(); params.append("action", "delete"); params.append("id", btn.dataset.id); params.append("employee", CURRENT_USER.name);
-        try { await fetch(GOOGLE_WEBAPP_URL, { method: "POST", body: params }); renderOrders(); }
-        catch (e) { alert("刪除失敗"); }
-      });
-    });
-  } catch (e) { console.error("加載訂單失敗", e); }
-}
-el("addLunch").addEventListener("click", async () => {
-  const itemVal = el("menuItem").value; if (!itemVal) return alert("請選擇餐點");
-  const itemObj = JSON.parse(itemVal);
+
+el("addLunch").onclick = async () => {
+  const itemObj = JSON.parse(el("menuItem").value);
   el("addLunch").disabled = true;
-  let finalNote = el("note").value; const friesVal = el("addFries").value;
-  if (friesVal && !el("friesRow").classList.contains("hidden")) { finalNote = finalNote ? `${finalNote} / ${friesVal}` : friesVal; }
-  const params = new URLSearchParams();
-  params.append("date", new Date().toISOString().slice(0, 10)); params.append("employee", CURRENT_USER.name);
-  params.append("restaurant", el("restaurant").value); params.append("category", itemObj.cat || "");
-  params.append("item", itemObj.name); params.append("price", itemObj.price || "");
-  params.append("spice", el("spice").value); params.append("qty", el("qty").value);
-  params.append("note", finalNote); params.append("potMain", el("potMain").value || "");
-  try { await fetch(GOOGLE_WEBAPP_URL, { method: "POST", body: params }); alert("訂單已新增"); renderOrders(); el("note").value = ""; el("qty").value = 1; }
-  catch (e) { alert("新增失敗"); }
-  finally { el("addLunch").disabled = false; }
-});
-el("restaurant").addEventListener("change", () => populateMenu(el("restaurant").value));
-el("menuItem").addEventListener("change", handleDynamicUI);
-el("toLunch").addEventListener("click", () => { el("page-home").classList.add("hidden"); el("page-lunch").classList.remove("hidden"); });
-el("backFromLunch").addEventListener("click", () => { el("page-lunch").classList.add("hidden"); el("page-home").classList.remove("hidden"); });
+  
+  const checkboxes = document.querySelectorAll('input[name="customOption"]:checked');
+  let potMainVal = checkboxes.length ? Array.from(checkboxes).map(cb => cb.value).join(', ') : (el("potMain") ? el("potMain").value : "");
+
+  // 取得當前日期 YYYY-MM-DD
+  const today = new Date().toISOString().split('T')[0];
+
+  const params = new URLSearchParams({
+    action: "add", 
+    date: today, // 補上 Date 欄位傳回後端[cite: 3]
+    employee: CURRENT_USER.name, 
+    restaurant: el("restaurant").value,
+    category: itemObj.cat, 
+    item: itemObj.name, 
+    price: itemObj.price, 
+    spice: el("spice").value, 
+    qty: el("qty").value, 
+    note: el("note").value, 
+    potMain: potMainVal
+  });
+
+  await fetch(GOOGLE_WEBAPP_URL, { method: "POST", body: params });
+  alert("訂單已新增"); 
+  
+  el("qty").value = 1; el("note").value = "";
+  renderOrders(); 
+  el("addLunch").disabled = false;
+};
+
+async function renderOrders() {
+  const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getOrders&employee=${encodeURIComponent(CURRENT_USER.name)}`);
+  const data = await res.json();
+  const list = el("ordersList"); list.innerHTML = "";
+  data.forEach((o, index) => {
+    const div = document.createElement("div"); div.className = "order-item";
+    div.innerHTML = `
+      <div><strong>#${index + 1} ${o.restaurant} - ${o.item}</strong></div>
+      <div class="order-info">數量: ${o.qty} | 調味: ${o.spice}</div>
+      <div class="order-info">備註: ${o.note} | 選項: ${o.potMain || "無"}</div>
+      <button class="delete-btn" onclick="deleteOrder('${o.id}')">🗑️ 刪除</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+async function deleteOrder(id) {
+  if (!confirm("確定刪除？")) return;
+  await fetch(GOOGLE_WEBAPP_URL, { method: "POST", body: new URLSearchParams({action:"delete", id, employee: CURRENT_USER.name}) });
+  renderOrders();
+}
+
+el("restaurant").onchange = () => populateMenu(el("restaurant").value);
+el("menuItem").onchange = handleDynamicUI;
+el("toLunch").onclick = () => { el("page-home").classList.add("hidden"); el("page-lunch").classList.remove("hidden"); };
+el("backFromLunch").onclick = () => { el("page-lunch").classList.add("hidden"); el("page-home").classList.remove("hidden"); };
 </script>
 </body>
 </html>
