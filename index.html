@@ -50,24 +50,26 @@ button.secondary{background:#ffb777;color:#000}
 }
 .modal-content { 
   background: white; 
-  padding: 40px; 
-  border-radius: 24px; 
-  width: 580px; 
+  padding: 30px 40px; 
+  border-radius: 16px; 
+  width: 540px; 
   max-width: 90%; 
   box-shadow: 0 12px 40px rgba(0,0,0,0.15); 
   position: relative;
   box-sizing: border-box;
-  overflow: visible; /* 允許圖片稍微超出邊界 */
+  overflow: hidden;
 }
 .modal-header {
   text-align: center;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: bold;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
+  position: rnlative;
+  z-index: 10;
 }
 .modal-body { 
   text-align: left; 
