@@ -223,6 +223,10 @@ const potMainConfigs = {
 };
 
 const specialRestaurantImages = {
+  "萬客臨": [
+    "https://raw.githubusercontent.com/Ameliahidomi/ctc_bento/main/scontent01.jpg",
+    "https://raw.githubusercontent.com/Ameliahidomi/ctc_bento/main/scontent02.jpg"
+  ],
   "月宮寶盒烤肉飯": [
     "https://raw.githubusercontent.com/Ameliahidomi/ctcbento/main/uuezh.jpg"
   ],
@@ -356,7 +360,7 @@ function handleDynamicUI() {
   el("additionalRow").classList.add("hidden"); 
   el("friesRow").classList.add("hidden");
 
-  if (restaurant.includes("月宮寶盒烤肉飯") || restaurant.includes("豆坊")) {
+  if (restaurant.includes("月宮寶盒烤肉飯") || restaurant.includes("萬客臨")) {
     el("menuItem").classList.add("hidden");       
     el("customItem").classList.remove("hidden");    
     el("priceRow").classList.remove("hidden");      
@@ -461,7 +465,7 @@ el("addLunch").onclick = async () => {
   if(restaurant.startsWith("🔄")) return; 
   
   let itemObj = { cat: "手動輸入", name: "", price: 0 };
-  const isCustomInput = restaurant.includes("月宮寶盒烤肉飯") || restaurant.includes("豆坊");
+  const isCustomInput = restaurant.includes("月宮寶盒烤肉飯") || restaurant.includes("萬客臨");
   
   if (isCustomInput) {
     const customName = el("customItem").value.trim();
