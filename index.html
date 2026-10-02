@@ -153,7 +153,11 @@ button:hover {
     <div class="center"><button id="toLunch">🍱 午餐</button><button id="toTea" class="secondary hidden">☕ 下午茶</button></div>
   </div>
   <div id="page-lunch" class="hidden">
-    <div class="row"><label>🏪 餐廳名稱</label><select id="restaurant"></select></div>
+    <div class="row">
+      <label>🏪 餐廳名稱</label>
+      <select id="restaurant"></select>
+      <button id="btnViewMenuImg" class="secondary hidden" style="padding:4px 8px; font-size:12px;">🖼️ 查看菜單圖片</button>
+    </div>
     <div class="menu-area">
       <div class="row">
         <label>🍲 餐點選擇</label>
@@ -243,22 +247,45 @@ const el = id => document.getElementById(id);
 
 el("closeNotice").onclick = () => { el("noticeModal").style.display = "none"; el("page-login").classList.remove("hidden"); };
 
+// 【優化登入】使用本機快取與非同步並行加載
 el("btnLogin").onclick = async () => {
   const empId = el("empId").value.trim(); if (!empId) return;
   el("btnLogin").disabled = true;
+  el("btnLogin").textContent = "登入中...";
+
   try {
-    const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getEmployees`);
-    const data = await res.json();
-    const found = data.find(e => String(e.id) === empId);
+    // 優先讀取 LocalStorage 快取
+    const cached = JSON.parse(localStorage.getItem("EMP_CACHE") || "[]");
+    let found = cached.find(e => String(e.id) === empId);
+
+    if (!found) {
+      const res = await fetch(`${GOOGLE_WEBAPP_URL}?action=getEmployees`);
+      const data = await res.json();
+      found = data.find(e => String(e.id) === empId);
+      if (found) {
+        cached.push(found);
+        localStorage.setItem("EMP_CACHE", JSON.stringify(cached));
+      }
+    }
+
     if (found) { 
       CURRENT_USER = found; 
       el("page-login").classList.add("hidden"); 
       el("page-home").classList.remove("hidden"); 
       el("welcome").textContent = `歡迎 ${found.name}`; 
-      renderOrders(); 
+
+      // 並行預載訂單與菜單，大幅提升進入速度
+      Promise.all([
+        renderOrders(),
+        loadMenus("lunch")
+      ]);
     }
-    else { alert("工號錯誤"); el("btnLogin").disabled = false; }
-  } catch (e) { alert("系統錯誤"); el("btnLogin").disabled = false; }
+    else { alert("工號錯誤"); }
+  } catch (e) { alert("系統連線失敗"); }
+  finally {
+    el("btnLogin").disabled = false;
+    el("btnLogin").textContent = "登入";
+  }
 };
 
 async function loadMenus(mode) {
@@ -281,58 +308,65 @@ async function loadMenus(mode) {
     });
     
     if (sel.options.length > 0) {
-      triggerRestaurantChange(sel.value); // 確保初次載入時觸發餐廳切換邏輯
+      triggerRestaurantChange(sel.value);
     }
   } catch (e) {
     sel.innerHTML = "<option disabled>❌ 載入失敗，請重新切換試試</option>";
   }
 }
 
+function getRestaurantImages(restaurant) {
+  const specialKey = Object.keys(specialRestaurantImages).find(k => restaurant.includes(k));
+  let specialImages = specialKey ? specialRestaurantImages[specialKey] : null;
+  const configKey = Object.keys(potMainConfigs).find(k => restaurant.includes(k));
+  let configData = configKey ? potMainConfigs[configKey] : null;
+  
+  if (!specialImages && configData && configData.img) {
+    specialImages = [configData.img];
+  }
+  return specialImages;
+}
+
 function triggerRestaurantChange(restaurant) {
   populateMenu(restaurant);
   
-  // 檢查是否有特別圖片需要跳出視窗（只在切換餐廳時觸發一次）
-  if (restaurant !== lastShownRestaurant && !EDIT_ORDER_ID) {
-    const specialKey = Object.keys(specialRestaurantImages).find(k => restaurant.includes(k));
-    let specialImages = specialKey ? specialRestaurantImages[specialKey] : null;
-    
-    const configKey = Object.keys(potMainConfigs).find(k => restaurant.includes(k));
-    let configData = configKey ? potMainConfigs[configKey] : null;
-    
-    if (!specialImages && configData && configData.img) {
-      specialImages = [configData.img];
-    }
+  // 優化：控制圖片按鈕顯示，取消彈窗阻塞
+  const imgs = getRestaurantImages(restaurant);
+  const btnView = el("btnViewMenuImg");
+  if (imgs && imgs.length > 0) {
+    btnView.classList.remove("hidden");
+    btnView.onclick = () => showMenuImageModal(restaurant, imgs);
+  } else {
+    btnView.classList.add("hidden");
+  }
+}
 
-    if (specialImages && specialImages.length > 0) {
-      const imgTags = specialImages.map(url => `<img src="${url}" style="max-width:100%; display:block; margin:0 auto 20px auto; box-shadow:0 4px 10px rgba(0,0,0,0.15); border-radius:8px;">`).join('');
-      const pageContent = `
-        <html>
-        <head>
-          <title>${restaurant} 菜單瀏覽</title>
-          <style>
-            body { background: #fff4ea; margin: 0; padding: 30px 15px; font-family: sans-serif; text-align: center; }
-            .container { max-width: 800px; margin: 0 auto; }
-            h2 { color: #333; margin-bottom: 25px; font-size: 22px; }
-            .tip { color: #666; font-size: 14px; margin-bottom: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h2>📋 ${restaurant} — 菜單內容</h2>
-            <p class="tip">💡 提示：可往下滑動查看完整菜單</p>
-            ${imgTags}
-          </div>
-        </body>
-        </html>
-      `;
-      
-      const menuWindow = window.open();
-      if (menuWindow) {
-        menuWindow.document.write(pageContent);
-        menuWindow.document.close();
-      }
-    }
-    lastShownRestaurant = restaurant;
+function showMenuImageModal(restaurant, specialImages) {
+  const imgTags = specialImages.map(url => `<img src="${url}" style="max-width:100%; display:block; margin:0 auto 20px auto; box-shadow:0 4px 10px rgba(0,0,0,0.15); border-radius:8px;">`).join('');
+  const pageContent = `
+    <html>
+    <head>
+      <title>${restaurant} 菜單瀏覽</title>
+      <style>
+        body { background: #fff4ea; margin: 0; padding: 30px 15px; font-family: sans-serif; text-align: center; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h2 { color: #333; margin-bottom: 25px; font-size: 22px; }
+        .tip { color: #666; font-size: 14px; margin-bottom: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>📋 ${restaurant} — 菜單內容</h2>
+        <p class="tip">💡 提示：可往下滑動查看完整菜單</p>
+        ${imgTags}
+      </div>
+    </body>
+    </html>
+  `;
+  const menuWindow = window.open();
+  if (menuWindow) {
+    menuWindow.document.write(pageContent);
+    menuWindow.document.close();
   }
 }
 
@@ -657,15 +691,15 @@ el("menuItem").onchange = handleDynamicUI;
 el("toLunch").onclick = () => { 
   el("page-home").classList.add("hidden"); 
   el("page-lunch").classList.remove("hidden"); 
-  lastShownRestaurant = "";
   resetFormInputs();
-  loadMenus("lunch"); 
+  if (Object.keys(MENUS).length === 0) {
+    loadMenus("lunch");
+  }
 };
 
 el("toTea").onclick = () => { 
   el("page-home").classList.add("hidden"); 
   el("page-lunch").classList.remove("hidden"); 
-  lastShownRestaurant = "";
   resetFormInputs();
   loadMenus("tea"); 
 };
