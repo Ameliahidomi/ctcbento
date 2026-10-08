@@ -201,8 +201,8 @@ const potMainConfigs = {
   "五花馬水餃館": { categoryKey: "麵食類", options: ["白麵", "蔬菜麵"], label: "🍜 主食選擇" },
   "吃得巧海苔飯捲": { categoryKey: "口味", options: ["正常", "換拾穀+$10", "加菜+$10", "加飯+$15", "加肉+$15"], label: "🍜 份量加購" },
   "水粉嬤便當": { categoryKey: "便當系列", options: ["正常", "半飯", "不飯"], label: "🍜 主食選擇" },
-  "鼎新刈包": { categoryKey: "精選刈包", options: ["原味", "薑黃", "全麥", "黑糖"], label: "🌮 刈包選擇", img: "https://raw.githubusercontent.com/Ameliahidomi/ctc_bento/main/Guabao.jpg" },
-  "豆坊": { img: "https://raw.githubusercontent.com/Ameliahidomi/ctc_bento/main/Doufun.jpg" },
+  "豆坊": { img: "https://raw.githubusercontent.com/Ameliahidomi/ctcbento/main/Doufun.jpg" },
+  "光頭龍蝦沙拉堡": { img: "https://raw.githubusercontent.com/Ameliahidomi/ctcbento/main/Lobster roll.jpg" },
   "江鳥紅": { categoryKey: "鍋燒系列", options: ["冬粉", "飯", "意麵+$10", "拉麵+$10"], label: "🍜 主食選擇" },
   "朵栗兒涼麵": { img: "https://raw.githubusercontent.com/Ameliahidomi/ctc_bento/main/dolier.jpg" },
   "三色麵疙瘩": { categoryKey: "湯底", options: ["麵疙瘩", "意麵", "雞絲", "冬粉", "泡飯", "蒸煮麵", "王子麵"], label: "🍜 主食選擇" },
@@ -394,7 +394,7 @@ function handleDynamicUI() {
   el("additionalRow").classList.add("hidden"); 
   el("friesRow").classList.add("hidden");
 
-  if (restaurant.includes("月宮寶盒烤肉飯") || restaurant.includes("萬客臨")) {
+  if (restaurant.includes("月宮寶盒烤肉飯") || restaurant.includes("光頭龍蝦沙拉堡")) {
     el("menuItem").classList.add("hidden");       
     el("customItem").classList.remove("hidden");    
     el("priceRow").classList.remove("hidden");      
